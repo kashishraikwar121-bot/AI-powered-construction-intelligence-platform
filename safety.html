@@ -1,0 +1,251 @@
+<<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Safety Monitoring</title>
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        .upload-box {
+            margin-top: 20px;
+            padding: 25px;
+            background: #f8fafc;
+            border: 2px dashed #94a3b8;
+            border-radius: 12px;
+        }
+
+        #image-preview {
+            display: none;
+            max-width: 100%;
+            max-height: 400px;
+            margin-top: 20px;
+            border-radius: 10px;
+            object-fit: contain;
+        }
+
+        #image-status {
+            margin-top: 15px;
+            color: #334155;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>🦺 Site Safety Monitoring</h1>
+        <p>Construction Intelligence Platform</p>
+    </header>
+
+    <main>
+        <section class="module-area">
+            <h2>Construction Site Safety</h2>
+
+            <p>Select an image of your construction site to preview it.</p>
+
+            <div class="upload-box">
+                <label for="site-image"><strong>Choose an image:</strong></label>
+                <br><br>
+
+                <input
+                    type="file"
+                    id="site-image"
+                    accept="image/*"
+                >
+
+                <p id="image-status">No image selected yet.</p>
+
+                <img
+                    id="image-preview"
+                    alt="Construction site image preview"
+                ><br>
+
+<button id="analyze-button" type="button">
+    🔍 Analyze Site Safety
+</button>
+
+<div id="analysis-result" style="margin-top: 20px;"></div>
+            </div>
+
+            <br>
+
+            <button onclick="window.location.href='index.html'">
+                ← Back to Dashboard
+            </button>
+        </section>
+    </main>
+
+    <script>
+     savedImage;
+        preview.style.display = "block";
+        status.textContent = "Previously uploaded image restored.";
+    }
+
+<script>
+    const imageInput = document.getElementById("site-image");
+    const preview = document.getElementById("image-preview");
+    const status = document.getElementById("image-status");
+    const analyzeButton = document.getElementById("analyze-button");
+    const analysisResult = document.getElementById("analysis-result");
+
+    // Restore the previously saved image when the page opens
+    const savedImage = localStorage.getItem("constructionSiteImage");
+
+    if (savedImage) {
+        preview.src = savedImage;
+        preview.style.display = "block";
+        status.textContent = "Previously uploaded image restored.";
+    }
+
+    // Save and preview a newly selected image
+    imageInput.addEventListener("change", function () {
+        const file = this.files[0];
+
+        analysisResult.innerHTML = "";
+
+        if (!file) {
+            return;
+        }
+
+        if (!file.type.startsWith("image/")) {
+            status.textContent = "Please select a valid image.";
+            imageInput.value = "";
+            return;
+        }
+
+        if (file.size > 2 * 1024 * 1024) {
+            status.textContent =
+                "Image is larger than 2 MB. Please choose a smaller image.";
+            imageInput.value = "";
+            return;
+        }
+
+        const reader = new FileReader();
+
+        reader.onload = function (event) {
+            const imageData = event.target.result;
+
+            try {
+                localStorage.setItem("constructionSiteImage", imageData);
+
+                preview.src = imageData;
+                preview.style.display = "block";
+                status.textContent = "Image saved successfully!";
+            } catch (error) {
+                status.textContent =
+                    "Browser storage is full. Try a smaller image.";
+            }
+        };
+
+        reader.onerror = function () {
+            status.textContent =
+                "Could not read the image. Please try again.";
+        };
+
+        reader.readAsDataURL(file);
+    });
+
+    // Send the selected image to the FastAPI backend for Gemini analysis
+    analyzeButton.addEventListener("click", async function () {
+        const file = imageInput.files[0];
+
+        if (!file) {
+            status.textContent =
+                "Please select an image before starting the analysis.";
+            return;
+        }
+
+        if (!file.type.startsWith("image/")) {
+            status.textContent = "Please select a valid image.";
+            return;
+        }
+
+        if (file.size > 2 * 1024 * 1024) {
+            status.textContent =
+                "Image is larger than 2 MB. Please choose a smaller image.";
+            return;
+        }
+
+        analyzeButton.disabled = true;
+        analyzeButton.textContent = "⏳ Analyzing...";
+        analysisResult.innerHTML =
+            "<p>Gemini is analyzing your construction-site image. Please wait...</p>";
+
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const response = await fetch(
+                "http://127.0.0.1:8000/analyze-safety",
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.detail || "The safety analysis failed."
+                );
+            }
+
+            // Display the AI-generated safety report
+            analysisResult.replaceChildren();
+
+            const heading = document.createElement("h2");
+            heading.textContent = "🦺 Safety Analysis Report";
+            analysisResult.appendChild(heading);
+
+            if (data.feature) {
+                const feature = document.createElement("p");
+                feature.textContent = "Feature: " + data.feature;
+                analysisResult.appendChild(feature);
+            }
+
+            const report = document.createElement("div");
+            report.style.whiteSpace = "pre-wrap";
+            report.style.lineHeight = "1.7";
+            report.style.padding = "15px";
+            report.style.background = "#f8fafc";
+            report.style.borderRadius = "10px";
+            report.style.border = "1px solid #cbd5e1";
+
+            report.textContent =
+                data.report || "The AI returned no report.";
+
+            analysisResult.appendChild(report);
+
+            if (data.notice) {
+                const notice = document.createElement("p");
+                notice.textContent = "⚠️ " + data.notice;
+                notice.style.marginTop = "15px";
+                notice.style.color = "#92400e";
+                analysisResult.appendChild(notice);
+            }
+
+            status.textContent = "Safety analysis completed successfully!";
+
+        } catch (error) {
+            console.error("Safety analysis error:", error);
+
+            analysisResult.replaceChildren();
+
+            const errorMessage = document.createElement("p");
+            errorMessage.textContent =
+                "Analysis failed: " + error.message;
+            errorMessage.style.color = "#b91c1c";
+
+            analysisResult.appendChild(errorMessage);
+
+            status.textContent =
+                "Could not complete the safety analysis.";
+        } finally {
+            analyzeButton.disabled = false;
+            analyzeButton.textContent = "🔍 Analyze Site Safety";
+        }
+    });
+</script>
+</body>
+</html>

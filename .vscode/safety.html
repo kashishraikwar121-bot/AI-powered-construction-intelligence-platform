@@ -1,0 +1,150 @@
+
+<script>
+const imageInput = document.getElementById("site-image");
+const preview = document.getElementById("image-preview");
+const status = document.getElementById("image-status");
+const analyzeButton = document.getElementById("analyze-button");
+const analysisResult = document.getElementById("analysis-result");
+
+// Restore the previously saved image preview
+const savedImage = localStorage.getItem("constructionSiteImage");
+
+if (savedImage) {
+    preview.src = savedImage;
+    preview.style.display = "block";
+    status.textContent = "Previously uploaded image restored.";
+}
+
+// Preview and save a newly selected image
+imageInput.addEventListener("change", function () {
+    const file = this.files[0];
+    analysisResult.replaceChildren();
+
+    if (!file) return;
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+        status.textContent = "Please select a JPG, PNG, or WebP image.";
+        this.value = "";
+        return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+        status.textContent = "Image must be smaller than 2 MB.";
+        this.value = "";
+        return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = function (event) {
+        try {
+            localStorage.setItem(
+                "constructionSiteImage",
+                event.target.result
+            );
+
+            preview.src = event.target.result;
+            preview.style.display = "block";
+            status.textContent = "Image saved successfully!";
+        } catch (error) {
+            status.textContent =
+                "Could not save the image in browser storage.";
+        }
+    };
+
+    reader.onerror = function () {
+        status.textContent = "Could not read the selected image.";
+    };
+
+    reader.readAsDataURL(file);
+});
+
+// Connect the button to the FastAPI and Gemini backend
+analyzeButton.addEventListener("click", async function () {
+    const file = imageInput.files[0];
+
+    if (!file) {
+        status.textContent =
+            "Please select an image before analyzing.";
+        return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+        status.textContent = "Image must be smaller than 2 MB.";
+        return;
+    }
+
+    analyzeButton.disabled = true;
+    analyzeButton.textContent = "Analyzing...";
+    analysisResult.replaceChildren();
+
+    const loading = document.createElement("p");
+    loading.textContent = "Gemini is analyzing your image. Please wait...";
+    analysisResult.appendChild(loading);
+
+    try {
+        const formData = new FormData();
+
+        // IMPORTANT: Your backend expects the field name "image".
+        formData.append("image", file);
+
+        const response = await fetch(
+            "http://127.0.0.1:8000/analyze-safety",
+            {
+                method: "POST",
+                body: formData
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.detail || `Request failed (${response.status})`
+            );
+        }
+
+        analysisResult.replaceChildren();
+
+        const heading = document.createElement("h2");
+        heading.textContent = "Construction Safety Report";
+        analysisResult.appendChild(heading);
+
+        const report = document.createElement("div");
+        report.style.whiteSpace = "pre-wrap";
+        report.style.lineHeight = "1.7";
+        report.style.padding = "16px";
+        report.style.background = "#f8fafc";
+        report.style.border = "1px solid #cbd5e1";
+        report.style.borderRadius = "10px";
+
+        // Display the AI report safely as text
+        report.textContent = data.report || "No report was returned.";
+        analysisResult.appendChild(report);
+
+        if (data.notice) {
+            const notice = document.createElement("p");
+            notice.textContent = "Notice: " + data.notice;
+            analysisResult.appendChild(notice);
+        }
+
+        status.textContent = "Safety analysis completed successfully!";
+
+    } catch (error) {
+        console.error("Safety analysis error:", error);
+
+        analysisResult.replaceChildren();
+
+        const errorText = document.createElement("p");
+        errorText.textContent = "Analysis failed: " + error.message;
+        errorText.style.color = "#b91c1c";
+        analysisResult.appendChild(errorText);
+
+        status.textContent = "Could not complete the analysis.";
+
+    } finally {
+        analyzeButton.disabled = false;
+        analyzeButton.textContent = "🔍 Analyze Site Safety";
+    }
+});
+</script>

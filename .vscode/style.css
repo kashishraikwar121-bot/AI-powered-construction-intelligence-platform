@@ -1,0 +1,41 @@
+const modules = {
+    safety: {
+        title: "Site Safety Monitoring",
+        description: "Upload a construction-site image for safety analysis. AI integration will be added later."
+    },
+    cracks: {
+        title: "Crack Detection",
+        description: "Prepare to inspect construction images for visible cracks."
+    },
+    valuation: {
+        title: "Property Valuation",
+        description: "Enter property details to prepare a valuation estimate."
+    },
+    planning: {
+        title: "Construction Project Planning",
+        description: "Organize construction activities and project requirements."
+    },
+    assistant: {
+        title: "AI Construction Assistant",
+        description: "Ask construction-related questions. The AI service will be connected later."
+    }
+};
+
+function openModule(moduleName) {
+    const module = modules[moduleName];
+
+    if (!module) {
+        return;
+    }
+
+    document.querySelector(".dashboard").hidden = true;
+    document.getElementById("module-area").hidden = false;
+
+    document.getElementById("module-title").textContent = module.title;
+    document.getElementById("module-description").textContent = module.description;
+}
+
+function goHome() {
+    document.querySelector(".dashboard").hidden = false;
+    document.getElementById("module-area").hidden = true;
+}

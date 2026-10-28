@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Construction Intelligence Platform</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <h1>🏗️ Construction Intelligence</h1>
+        <p>Smart decisions for safer construction</p>
+    </header>
+
+    <main>
+        <h2>Welcome to Your Dashboard</h2>
+        <p>Choose a feature to get started.</p>
+
+       <section class="dashboard">
+
+    <div class="card">
+        <h3>🦺 Site Safety</h3>
+        <p>Analyze construction site safety.</p>
+        <button onclick="openModule('safety')">Open Module</button>
+    </div>
+
+    <div class="card">
+        <h3>🧱 Crack Detection</h3>
+        <p>Inspect images for visible cracks.</p>
+        <button onclick="openModule('cracks')">Open Module</button>
+    </div>
+
+    <div class="card">
+        <h3>💰 Property Valuation</h3>
+        <p>Estimate property values.</p>
+        <button onclick="openModule('valuation')">Open Module</button>
+    </div>
+
+    <div class="card">
+        <h3>📋 Project Planning</h3>
+        <p>Plan construction activities.</p>
+        <button onclick="openModule('planning')">Open Module</button>
+    </div>
+
+    <div class="card">
+        <h3>🤖 AI Assistant</h3>
+        <p>Get construction-related assistance.</p>
+        <button onclick="openModule('assistant')">Open Module</button>
+    </div>
+
+</section>
+
+<section id="module-area" class="module-area" hidden>
+    <h2 id="module-title"></h2>
+    <p id="module-description"></p>
+    <button onclick="goHome()">Back to Dashboard</button>
+</section>
+    </main>
+    <button onclick="window.location.href='cracks.html'">
+    Open Module
+</button>
+
+    <script src="script.js"></script>
+</body>
+</html>
